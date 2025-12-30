@@ -1,0 +1,1557 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain#2 Admin</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        
+        .auth-section { 
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .hidden { 
+            display: none; 
+        }
+        
+        button { 
+            padding: 10px 20px; 
+            margin: 5px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            background: #fff;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        button:hover { 
+            background: #f0f0f0;
+            border-color: #999;
+        }
+        
+        button.primary {
+            background: #0066cc;
+            color: white;
+            border-color: #0066cc;
+        }
+        
+        button.primary:hover {
+            background: #0052a3;
+        }
+        
+        button.danger {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+        
+        button.danger:hover {
+            background: #c82333;
+        }
+        
+        input, select, textarea { 
+            padding: 10px; 
+            margin: 5px 0;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        textarea {
+            max-width: 800px;
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin: 20px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        th, td { 
+            border: 1px solid #e0e0e0; 
+            padding: 12px; 
+            text-align: left; 
+        }
+        
+        th { 
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .section { 
+            margin: 20px 0; 
+            padding: 25px; 
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .section h2 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #0066cc;
+            padding-bottom: 10px;
+        }
+        
+        .section h3 {
+            margin: 20px 0 10px 0;
+            color: #555;
+        }
+        
+        .error { 
+            color: #dc3545; 
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 4px;
+        }
+        
+        .success { 
+            color: #28a745; 
+            margin: 10px 0;
+            padding: 10px;
+            background: #d4edda;
+            border-radius: 4px;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-tabs button {
+            background: white;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .nav-tabs button:hover {
+            border-bottom-color: #0066cc;
+        }
+        
+        .nav-tabs button.active {
+            border-bottom-color: #0066cc;
+            background: #f0f7ff;
+        }
+        
+        .habit-item {
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            margin: 10px 0;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            background: white;
+            transition: all 0.2s;
+        }
+        
+        .habit-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .habit-item input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        
+        .habit-item.completed {
+            background: #f0f7ff;
+            border-color: #0066cc;
+        }
+        
+        .journal-entry {
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 6px;
+            background: white;
+        }
+        
+        .journal-entry strong {
+            color: #0066cc;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .journal-entry p {
+            margin-top: 10px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #0066cc;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .stat-card h4 {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal.hidden {
+            display: none;
+        }
+        
+        .modal:not(.hidden) {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        
+        .action-buttons button {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Section -->
+    <div id="authSection" class="auth-section">
+        <h1>🧠 Brain#2 Quick Admin</h1>
+        <p style="color: #666; margin: 10px 0;">Personal Life Management System</p>
+        
+        <div id="loginForm">
+            <h2 style="margin-top: 20px;">Login or Sign Up</h2>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+            <div>
+                <button class="primary" onclick="login()">Login</button>
+                <button onclick="signup()">Sign Up</button>
+            </div>
+        </div>
+        
+        <div id="loggedIn" class="hidden">
+            <p>Logged in as: <strong><span id="userEmail"></span></strong></p>
+            <button class="danger" onclick="logout()">Logout</button>
+        </div>
+        
+        <div id="authError" class="error hidden"></div>
+        <div id="authSuccess" class="success hidden"></div>
+    </div>
+
+    <!-- Main App (hidden until logged in) -->
+    <div id="mainApp" class="hidden">
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <button onclick="showSection('tasks')" id="btn-tasks">📋 Tasks</button>
+            <button onclick="showSection('health')" id="btn-health">❤️ Health</button>
+            <button onclick="showSection('habits')" id="btn-habits">✅ Habits</button>
+            <button onclick="showSection('journal')" id="btn-journal">📔 Journal</button>
+        </div>
+
+        <!-- Tasks Section -->
+        <div id="tasks" class="section">
+            <h2>📋 Tasks</h2>
+            
+            <div class="form-group">
+                <h3>Add New Task</h3>
+                <input type="text" id="taskTitle" placeholder="What needs to be done?">
+                
+                <label for="taskStatus">Status</label>
+                <select id="taskStatus">
+                    <option value="inbox">Inbox</option>
+                    <option value="todo">To Do</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="waiting">Waiting</option>
+                    <option value="completed">Completed</option>
+                </select>
+                
+                <label for="taskPriority">Priority</label>
+                <select id="taskPriority">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                </select>
+                
+                <label for="taskDueDate">Due Date (optional)</label>
+                <input type="date" id="taskDueDate">
+                
+                <button class="primary" onclick="addTask()">Add Task</button>
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <label for="taskFilter">Filter: </label>
+                <select id="taskFilter" onchange="loadTasks()">
+                    <option value="all">All Tasks</option>
+                    <option value="today">Due Today</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="completed">Completed</option>
+                    <option value="active">Active (Not Completed)</option>
+                </select>
+            </div>
+            
+            <div id="tasksList"></div>
+            
+            <!-- Edit Task Modal -->
+            <div id="editTaskModal" class="modal hidden">
+                <div class="modal-content">
+                    <h3>Edit Task</h3>
+                    <input type="hidden" id="editTaskId">
+                    
+                    <label for="editTaskTitle">Task Name</label>
+                    <input type="text" id="editTaskTitle">
+                    
+                    <label for="editTaskStatus">Status</label>
+                    <select id="editTaskStatus">
+                        <option value="inbox">Inbox</option>
+                        <option value="todo">To Do</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="waiting">Waiting</option>
+                        <option value="completed">Completed</option>
+                    </select>
+                    
+                    <label for="editTaskPriority">Priority</label>
+                    <select id="editTaskPriority">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                    
+                    <label for="editTaskDueDate">Due Date</label>
+                    <input type="date" id="editTaskDueDate">
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="primary" onclick="saveTaskEdit()">Save</button>
+                        <button onclick="closeEditTaskModal()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Metrics Section -->
+        <div id="health" class="section hidden">
+            <h2>❤️ Health Metrics</h2>
+            
+            <div class="form-group">
+                <h3>Log Today's Metrics</h3>
+                
+                <label for="healthDate">Date</label>
+                <input type="date" id="healthDate">
+                
+                <label for="metricType">Metric</label>
+                <select id="metricType">
+                    <option value="weight">Weight (kg)</option>
+                    <option value="sleep">Sleep (hours)</option>
+                    <option value="exercise">Exercise (minutes)</option>
+                    <option value="mood">Mood (1-10)</option>
+                    <option value="water">Water (ml)</option>
+                    <option value="steps">Steps</option>
+                    <option value="calories">Calories</option>
+                </select>
+                
+                <label for="metricValue">Value</label>
+                <input type="number" id="metricValue" step="0.1" placeholder="Enter value">
+                
+                <button class="primary" onclick="logHealth()">Log Metric</button>
+            </div>
+            
+            <div id="healthList"></div>
+            
+            <!-- Edit Health Metric Modal -->
+            <div id="editHealthModal" class="modal hidden">
+                <div class="modal-content">
+                    <h3>Edit Health Metric</h3>
+                    <input type="hidden" id="editHealthId">
+                    
+                    <label for="editHealthDate">Date</label>
+                    <input type="date" id="editHealthDate">
+                    
+                    <label for="editHealthType">Metric</label>
+                    <input type="text" id="editHealthType" readonly style="background: #f0f0f0;">
+                    
+                    <label for="editHealthValue">Value</label>
+                    <input type="number" id="editHealthValue" step="0.1">
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="primary" onclick="saveHealthEdit()">Save</button>
+                        <button onclick="closeEditHealthModal()">Cancel</button>
+                        <button class="danger" onclick="deleteHealthMetric()">Delete</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Habits Section -->
+        <div id="habits" class="section hidden">
+            <h2>✅ Habits - Today</h2>
+            
+            <div id="habitsList"></div>
+            
+            <div class="form-group" style="margin-top: 30px;">
+                <h3>Add New Habit</h3>
+                <input type="text" id="habitName" placeholder="Habit name (e.g., Morning Exercise)">
+                
+                <label for="habitFrequency">Frequency</label>
+                <select id="habitFrequency">
+                    <option value="daily" selected>Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+                
+                <button class="primary" onclick="createHabit()">Create Habit</button>
+            </div>
+            
+            <!-- Edit Habit Modal -->
+            <div id="editHabitModal" class="modal hidden">
+                <div class="modal-content">
+                    <h3>Edit Habit</h3>
+                    <input type="hidden" id="editHabitId">
+                    
+                    <label for="editHabitName">Habit Name</label>
+                    <input type="text" id="editHabitName">
+                    
+                    <label for="editHabitFrequency">Frequency</label>
+                    <select id="editHabitFrequency">
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                    
+                    <label>
+                        <input type="checkbox" id="editHabitActive" style="width: auto;">
+                        Active
+                    </label>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="primary" onclick="saveHabitEdit()">Save</button>
+                        <button onclick="closeEditHabitModal()">Cancel</button>
+                        <button class="danger" onclick="deleteHabit()">Delete Habit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Journal Section -->
+        <div id="journal" class="section hidden">
+            <h2>📔 Journal</h2>
+            
+            <div class="form-group">
+                <h3>Today's Entry</h3>
+                
+                <label for="journalDate">Date</label>
+                <input type="date" id="journalDate">
+                
+                <label for="journalContent">What's on your mind?</label>
+                <textarea id="journalContent" 
+                          placeholder="What happened today? What are you grateful for? What could be better tomorrow?"></textarea>
+                
+                <button class="primary" onclick="saveJournal()">Save Entry</button>
+            </div>
+            
+            <div id="journalList"></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // BRAIN#2 ADMIN INTERFACE v1.1
+        // ==========================================
+        // 
+        // Schema Requirements:
+        // - Tasks MUST have either parent_task_id OR (project_id OR area_id)
+        //   This interface auto-creates an "Inbox" area for standalone tasks
+        // - Habits MUST have a frequency field (daily/weekly/monthly/etc)
+        // - Health metrics use EAV pattern with unique constraint on (user_id, log_date, metric_type)
+        // - Journal entries can have one entry per date
+        //
+        // ==========================================
+        // CONFIGURATION - REPLACE WITH YOUR VALUES
+        // ==========================================
+        const SUPABASE_URL = 'https://oxvbrzxvxhplfrhpkwrb.supabase.co'  // e.g., 'https://xxxxx.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94dmJyenh2eGhwbGZyaHBrd3JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMjkwMDcsImV4cCI6MjA4MDYwNTAwN30.A90ow9V-qpn0-cnqqKUGxlEEXmh4Mfhl7wfOJIojNc8'  // Your anon/public key
+        
+        // Initialize Supabase
+        const { createClient } = supabase
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        let currentUser = null
+
+        // Set today's date for inputs
+        const today = new Date().toISOString().split('T')[0]
+        
+        // ==========================================
+        // AUTH FUNCTIONS
+        // ==========================================
+        async function signup() {
+            const email = document.getElementById('email').value
+            const password = document.getElementById('password').value
+            
+            hideMessages()
+            
+            if (!email || !password) {
+                showError('Please enter both email and password')
+                return
+            }
+            
+            if (password.length < 6) {
+                showError('Password must be at least 6 characters')
+                return
+            }
+            
+            const { data, error } = await supabaseClient.auth.signUp({
+                email,
+                password,
+            })
+            
+            if (error) {
+                showError(error.message)
+            } else {
+                showSuccess('Check your email to confirm your account!')
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value
+            const password = document.getElementById('password').value
+            
+            hideMessages()
+            
+            if (!email || !password) {
+                showError('Please enter both email and password')
+                return
+            }
+            
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email,
+                password,
+            })
+            
+            if (error) {
+                showError(error.message)
+            } else {
+                currentUser = data.user
+                showLoggedIn()
+            }
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut()
+            currentUser = null
+            document.getElementById('authSection').classList.remove('hidden')
+            document.getElementById('mainApp').classList.add('hidden')
+            document.getElementById('loginForm').classList.remove('hidden')
+            document.getElementById('loggedIn').classList.add('hidden')
+        }
+
+        function showLoggedIn() {
+            document.getElementById('authSection').classList.add('hidden')
+            document.getElementById('mainApp').classList.remove('hidden')
+            document.getElementById('loginForm').classList.add('hidden')
+            document.getElementById('loggedIn').classList.remove('hidden')
+            document.getElementById('userEmail').textContent = currentUser.email
+            
+            // Default to tasks view
+            showSection('tasks')
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('authError')
+            errorDiv.textContent = message
+            errorDiv.classList.remove('hidden')
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('authSuccess')
+            successDiv.textContent = message
+            successDiv.classList.remove('hidden')
+        }
+
+        function hideMessages() {
+            document.getElementById('authError').classList.add('hidden')
+            document.getElementById('authSuccess').classList.add('hidden')
+        }
+
+        // Check for existing session on load
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                currentUser = session.user
+                showLoggedIn()
+            }
+        })
+
+        // Listen for auth changes
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_OUT') {
+                currentUser = null
+            } else if (session) {
+                currentUser = session.user
+            }
+        })
+
+        // ==========================================
+        // TASKS FUNCTIONS
+        // ==========================================
+        
+        // Get or create default Inbox area for tasks
+        async function getInboxAreaId() {
+            // Check if we already have the inbox ID cached
+            const cachedInboxId = sessionStorage.getItem('inboxAreaId')
+            if (cachedInboxId) return cachedInboxId
+            
+            // Try to find existing Inbox area
+            const { data: existing } = await supabaseClient
+                .from('areas')
+                .select('id')
+                .eq('name', 'Inbox')
+                .is('deleted_at', null)
+                .maybeSingle()
+            
+            if (existing) {
+                sessionStorage.setItem('inboxAreaId', existing.id)
+                return existing.id
+            }
+            
+            // Create Inbox area if it doesn't exist
+            const { data: newArea, error } = await supabaseClient
+                .from('areas')
+                .insert([{
+                    name: 'Inbox',
+                    description: 'Default area for tasks',
+                    user_id: currentUser.id
+                }])
+                .select('id')
+                .single()
+            
+            if (error) {
+                console.error('Error creating Inbox area:', error)
+                return null
+            }
+            
+            sessionStorage.setItem('inboxAreaId', newArea.id)
+            return newArea.id
+        }
+        
+        async function addTask() {
+            const title = document.getElementById('taskTitle').value.trim()
+            const status = document.getElementById('taskStatus').value
+            const priority = document.getElementById('taskPriority').value
+            const dueDate = document.getElementById('taskDueDate').value || null
+            
+            if (!title) {
+                alert('Please enter a task title')
+                return
+            }
+            
+            // Get Inbox area ID (required by database constraint)
+            const areaId = await getInboxAreaId()
+            if (!areaId) {
+                alert('Error: Could not create Inbox area')
+                return
+            }
+            
+            const { data, error } = await supabaseClient
+                .from('tasks')
+                .insert([
+                    { 
+                        title, 
+                        status, 
+                        priority,
+                        due_date: dueDate,
+                        area_id: areaId,
+                        user_id: currentUser.id
+                    }
+                ])
+                .select()
+            
+            if (error) {
+                alert('Error: ' + error.message)
+                console.error('Full error:', error)
+            } else {
+                document.getElementById('taskTitle').value = ''
+                document.getElementById('taskDueDate').value = ''
+                loadTasks()
+            }
+        }
+
+        async function loadTasks() {
+            const filter = document.getElementById('taskFilter')?.value || 'all'
+            const today = new Date().toISOString().split('T')[0]
+            
+            let query = supabaseClient
+                .from('tasks')
+                .select('*')
+                .is('deleted_at', null)
+                .order('created_at', { ascending: false })
+            
+            // Apply filters
+            if (filter === 'today') {
+                query = query.eq('due_date', today)
+            } else if (filter === 'overdue') {
+                query = query.lt('due_date', today).neq('status', 'completed')
+            } else if (filter === 'completed') {
+                query = query.eq('status', 'completed')
+            } else if (filter === 'active') {
+                query = query.neq('status', 'completed')
+            }
+            
+            const { data, error } = await query
+            
+            if (error) {
+                console.error('Error loading tasks:', error)
+                return
+            }
+            
+            if (!data || data.length === 0) {
+                document.getElementById('tasksList').innerHTML = '<p style="color: #666; margin-top: 20px;">No tasks yet. Add your first task above!</p>'
+                return
+            }
+            
+            const html = `
+                <h3 style="margin-top: 30px;">Your Tasks</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Due Date</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(task => {
+                            const isOverdue = task.due_date && task.due_date < today && task.status !== 'completed'
+                            return `
+                            <tr>
+                                <td>${escapeHtml(task.title)}</td>
+                                <td><span style="padding: 4px 8px; background: ${getStatusColor(task.status)}; border-radius: 4px; font-size: 12px;">${task.status}</span></td>
+                                <td><span style="padding: 4px 8px; background: ${getPriorityColor(task.priority)}; border-radius: 4px; font-size: 12px;">${task.priority}</span></td>
+                                <td style="${isOverdue ? 'color: #dc3545; font-weight: bold;' : ''}">${task.due_date || '-'}</td>
+                                <td>${formatDate(task.created_at)}</td>
+                                <td class="action-buttons">
+                                    <button onclick="editTask('${task.id}')">✏️ Edit</button>
+                                    <button onclick="completeTask('${task.id}')">✓</button>
+                                    <button class="danger" onclick="deleteTask('${task.id}')">Delete</button>
+                                </td>
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>
+            `
+            document.getElementById('tasksList').innerHTML = html
+        }
+
+        async function completeTask(id) {
+            const { error } = await supabaseClient
+                .from('tasks')
+                .update({ 
+                    status: 'completed', 
+                    completed_at: new Date().toISOString() 
+                })
+                .eq('id', id)
+            
+            if (error) {
+                alert('Error completing task: ' + error.message)
+                console.error('Full error:', error)
+            } else {
+                loadTasks()
+            }
+        }
+
+        async function deleteTask(id) {
+            if (!confirm('Delete this task?')) return
+            
+            const { error } = await supabaseClient
+                .from('tasks')
+                .update({ deleted_at: new Date().toISOString() })
+                .eq('id', id)
+            
+            if (error) {
+                alert('Error deleting task: ' + error.message)
+                console.error('Full error:', error)
+            } else {
+                loadTasks()
+            }
+        }
+        
+        function editTask(id) {
+            // Find the task data
+            supabaseClient
+                .from('tasks')
+                .select('*')
+                .eq('id', id)
+                .single()
+                .then(({ data, error }) => {
+                    if (error) {
+                        alert('Error loading task: ' + error.message)
+                        return
+                    }
+                    
+                    // Populate modal
+                    document.getElementById('editTaskId').value = data.id
+                    document.getElementById('editTaskTitle').value = data.title
+                    document.getElementById('editTaskStatus').value = data.status
+                    document.getElementById('editTaskPriority').value = data.priority
+                    document.getElementById('editTaskDueDate').value = data.due_date || ''
+                    
+                    // Show modal
+                    document.getElementById('editTaskModal').classList.remove('hidden')
+                })
+        }
+        
+        function closeEditTaskModal() {
+            document.getElementById('editTaskModal').classList.add('hidden')
+        }
+        
+        async function saveTaskEdit() {
+            const id = document.getElementById('editTaskId').value
+            const title = document.getElementById('editTaskTitle').value.trim()
+            const status = document.getElementById('editTaskStatus').value
+            const priority = document.getElementById('editTaskPriority').value
+            const dueDate = document.getElementById('editTaskDueDate').value || null
+            
+            if (!title) {
+                alert('Please enter a task title')
+                return
+            }
+            
+            const updates = {
+                title,
+                status,
+                priority,
+                due_date: dueDate
+            }
+            
+            // If marking as completed, add completed_at timestamp
+            if (status === 'completed') {
+                updates.completed_at = new Date().toISOString()
+            }
+            
+            const { error } = await supabaseClient
+                .from('tasks')
+                .update(updates)
+                .eq('id', id)
+            
+            if (error) {
+                alert('Error updating task: ' + error.message)
+                console.error('Full error:', error)
+            } else {
+                closeEditTaskModal()
+                loadTasks()
+            }
+        }
+
+        // ==========================================
+        // HEALTH METRICS FUNCTIONS
+        // ==========================================
+        async function logHealth() {
+            const date = document.getElementById('healthDate').value
+            const metricType = document.getElementById('metricType').value
+            const value = document.getElementById('metricValue').value
+            
+            if (!value) {
+                alert('Please enter a value')
+                return
+            }
+            
+            if (!date) {
+                alert('Please select a date')
+                return
+            }
+            
+            // Get unit based on metric type
+            const units = {
+                weight: 'kg',
+                sleep: 'hours',
+                exercise: 'minutes',
+                water: 'ml',
+                steps: 'steps',
+                calories: 'kcal',
+                mood: null
+            }
+            
+            const { data, error } = await supabaseClient
+                .from('health_metrics')
+                .insert([
+                    {
+                        log_date: date,
+                        metric_type: metricType,
+                        value_numeric: parseFloat(value),
+                        unit: units[metricType],
+                        user_id: currentUser.id
+                    }
+                ])
+                .select()
+            
+            if (error) {
+                // Check if it's a duplicate entry error
+                if (error.code === '23505') {
+                    if (confirm('You already logged ' + metricType + ' for this date. Update it?')) {
+                        // Update existing entry
+                        const { error: updateError } = await supabaseClient
+                            .from('health_metrics')
+                            .update({
+                                value_numeric: parseFloat(value),
+                                unit: units[metricType]
+                            })
+                            .eq('log_date', date)
+                            .eq('metric_type', metricType)
+                            .eq('user_id', currentUser.id)
+                        
+                        if (updateError) {
+                            alert('Error updating: ' + updateError.message)
+                        } else {
+                            document.getElementById('metricValue').value = ''
+                            loadHealthMetrics()
+                        }
+                    }
+                } else {
+                    alert('Error: ' + error.message)
+                    console.error('Full error:', error)
+                }
+            } else {
+                document.getElementById('metricValue').value = ''
+                loadHealthMetrics()
+            }
+        }
+
+        async function loadHealthMetrics() {
+            const { data, error } = await supabaseClient
+                .from('health_metrics')
+                .select('*')
+                .order('log_date', { ascending: false })
+                .limit(30)
+            
+            if (error) {
+                console.error('Error loading health metrics:', error)
+                return
+            }
+            
+            if (!data || data.length === 0) {
+                document.getElementById('healthList').innerHTML = '<p style="color: #666; margin-top: 20px;">No health data yet. Log your first metric above!</p>'
+                return
+            }
+            
+            const html = `
+                <h3 style="margin-top: 30px;">Recent Logs</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Metric</th>
+                            <th>Value</th>
+                            <th>Unit</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(metric => `
+                            <tr>
+                                <td>${metric.log_date}</td>
+                                <td>${metric.metric_type}</td>
+                                <td><strong>${metric.value_numeric}</strong></td>
+                                <td>${metric.unit || '-'}</td>
+                                <td class="action-buttons">
+                                    <button onclick="editHealthMetric('${metric.id}')">✏️ Edit</button>
+                                    <button class="danger" onclick="deleteHealthMetric('${metric.id}')">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `
+            document.getElementById('healthList').innerHTML = html
+        }
+        
+        function editHealthMetric(id) {
+            supabaseClient
+                .from('health_metrics')
+                .select('*')
+                .eq('id', id)
+                .single()
+                .then(({ data, error }) => {
+                    if (error) {
+                        alert('Error loading metric: ' + error.message)
+                        return
+                    }
+                    
+                    document.getElementById('editHealthId').value = data.id
+                    document.getElementById('editHealthDate').value = data.log_date
+                    document.getElementById('editHealthType').value = data.metric_type
+                    document.getElementById('editHealthValue').value = data.value_numeric
+                    
+                    document.getElementById('editHealthModal').classList.remove('hidden')
+                })
+        }
+        
+        function closeEditHealthModal() {
+            document.getElementById('editHealthModal').classList.add('hidden')
+        }
+        
+        async function saveHealthEdit() {
+            const id = document.getElementById('editHealthId').value
+            const value = document.getElementById('editHealthValue').value
+            
+            if (!value) {
+                alert('Please enter a value')
+                return
+            }
+            
+            const { error } = await supabaseClient
+                .from('health_metrics')
+                .update({ value_numeric: parseFloat(value) })
+                .eq('id', id)
+            
+            if (error) {
+                alert('Error updating metric: ' + error.message)
+                console.error('Full error:', error)
+            } else {
+                closeEditHealthModal()
+                loadHealthMetrics()
+            }
+        }
+        
+        async function deleteHealthMetric(id) {
+            if (!id) {
+                // Called from modal
+                id = document.getElementById('editHealthId').value
+                closeEditHealthModal()
+            }
+            
+            if (!confirm('Delete this health metric?')) return
+            
+            const { error } = await supabaseClient
+                .from('health_metrics')
+                .delete()
+                .eq('id', id)
+            
+            if (error) {
+                alert('Error deleting metric: ' + error.message)
+                console.error('Full error:', error)
+            } else {
+                loadHealthMetrics()
+            }
+        }
+
+        // ==========================================
+        // HABITS FUNCTIONS
+        // ==========================================
+        async function loadHabits() {
+            const today = new Date().toISOString().split('T')[0]
+            
+            // Get all active habits
+            const { data: habits, error: habitsError } = await supabaseClient
+                .from('habits')
+                .select('*')
+                .eq('is_active', true)
+                .is('deleted_at', null)
+                .order('created_at', { ascending: true })
+            
+            if (habitsError) {
+                console.error('Error loading habits:', habitsError)
+                return
+            }
+            
+            if (!habits || habits.length === 0) {
+                document.getElementById('habitsList').innerHTML = '<p style="color: #666;">No habits yet. Create your first habit below!</p>'
+                return
+            }
+            
+            // Get today's logs
+            const { data: logs, error: logsError } = await supabaseClient
+                .from('habit_logs')
+                .select('*')
+                .eq('log_date', today)
+            
+            const logsMap = {}
+            if (logs) {
+                logs.forEach(log => {
+                    logsMap[log.habit_id] = log
+                })
+            }
+            
+            const html = `
+                <div>
+                    ${habits.map(habit => {
+                        const log = logsMap[habit.id]
+                        const completed = log?.completed || false
+                        return `
+                            <div class="habit-item ${completed ? 'completed' : ''}">
+                                <input type="checkbox" 
+                                       ${completed ? 'checked' : ''} 
+                                       onchange="toggleHabit('${habit.id}', this.checked)">
+                                <span style="flex: 1; font-size: 16px;">${escapeHtml(habit.name)}</span>
+                                <small style="color: #666; margin-right: 10px;">${habit.frequency || 'daily'}</small>
+                                <button onclick="editHabit('${habit.id}')">✏️</button>
+                            </div>
+                        `
+                    }).join('')}
+                </div>
+            `
+            document.getElementById('habitsList').innerHTML = html
+        }
+        
+        function editHabit(id) {
+            supabaseClient
+                .from('habits')
+                .select('*')
+                .eq('id', id)
+                .single()
+                .then(({ data, error }) => {
+                    if (error) {
+                        alert('Error loading habit: ' + error.message)
+                        return
+                    }
+                    
+                    document.getElementById('editHabitId').value = data.id
+                    document.getElementById('editHabitName').value = data.name
+                    document.getElementById('editHabitFrequency').value = data.frequency
+                    document.getElementById('editHabitActive').checked = data.is_active
+                    
+                    document.getElementById('editHabitModal').classList.remove('hidden')
+                })
+        }
+        
+        function closeEditHabitModal() {
+            document.getElementById('editHabitModal').classList.add('hidden')
+        }
+        
+        async function saveHabitEdit() {
+            const id = document.getElementById('editHabitId').value
+            const name = document.getElementById('editHabitName').value.trim()
+            const frequency = document.getElementById('editHabitFrequency').value
+            const isActive = document.getElementById('editHabitActive').checked
+            
+            if (!name) {
+                alert('Please enter a habit name')
+                return
+            }
+            
+            const { error } = await supabaseClient
+                .from('habits')
+                .update({
+                    name,
+                    frequency,
+                    is_active: isActive
+                })
+                .eq('id', id)
+            
+            if (error) {
+                alert('Error updating habit: ' + error.message)
+                console.error('Full error:', error)
+            } else {
+                closeEditHabitModal()
+                loadHabits()
+            }
+        }
+        
+        async function deleteHabit() {
+            const id = document.getElementById('editHabitId').value
+            closeEditHabitModal()
+            
+            if (!confirm('Delete this habit? This will also delete all historical logs.')) return
+            
+            const { error } = await supabaseClient
+                .from('habits')
+                .delete()
+                .eq('id', id)
+            
+            if (error) {
+                alert('Error deleting habit: ' + error.message)
+                console.error('Full error:', error)
+            } else {
+                loadHabits()
+            }
+        }
+
+        async function createHabit() {
+            const name = document.getElementById('habitName').value.trim()
+            const frequency = document.getElementById('habitFrequency').value
+            
+            if (!name) {
+                alert('Please enter habit name')
+                return
+            }
+            
+            const { error } = await supabaseClient
+                .from('habits')
+                .insert([{
+                    name,
+                    frequency,
+                    target_count: 1,
+                    is_active: true,
+                    user_id: currentUser.id
+                }])
+            
+            if (error) {
+                alert('Error: ' + error.message)
+                console.error('Full error:', error)
+            } else {
+                document.getElementById('habitName').value = ''
+                document.getElementById('habitFrequency').value = 'daily'
+                loadHabits()
+            }
+        }
+
+        async function toggleHabit(habitId, completed) {
+            const today = new Date().toISOString().split('T')[0]
+            
+            // Check if log exists
+            const { data: existing } = await supabaseClient
+                .from('habit_logs')
+                .select('*')
+                .eq('habit_id', habitId)
+                .eq('log_date', today)
+                .maybeSingle()
+            
+            if (existing) {
+                // Update existing
+                const { error } = await supabaseClient
+                    .from('habit_logs')
+                    .update({ completed })
+                    .eq('id', existing.id)
+                
+                if (error) {
+                    alert('Error updating habit: ' + error.message)
+                    console.error('Full error:', error)
+                    loadHabits() // Reload to reset checkbox
+                }
+            } else {
+                // Create new
+                const { error } = await supabaseClient
+                    .from('habit_logs')
+                    .insert([{
+                        habit_id: habitId,
+                        log_date: today,
+                        completed,
+                        user_id: currentUser.id
+                    }])
+                
+                if (error) {
+                    alert('Error logging habit: ' + error.message)
+                    console.error('Full error:', error)
+                    loadHabits() // Reload to reset checkbox
+                }
+            }
+            
+            loadHabits()
+        }
+
+        // ==========================================
+        // JOURNAL FUNCTIONS
+        // ==========================================
+        async function loadJournal() {
+            const today = new Date().toISOString().split('T')[0]
+            document.getElementById('journalDate').value = today
+            
+            // Load today's entry
+            const { data: todayEntry } = await supabaseClient
+                .from('journal_entries')
+                .select('*')
+                .eq('entry_date', today)
+                .maybeSingle()
+            
+            if (todayEntry) {
+                document.getElementById('journalContent').value = todayEntry.content
+            } else {
+                document.getElementById('journalContent').value = ''
+            }
+            
+            // Load recent entries
+            const { data: entries, error } = await supabaseClient
+                .from('journal_entries')
+                .select('*')
+                .order('entry_date', { ascending: false })
+                .limit(10)
+            
+            if (error) {
+                console.error('Error loading journal:', error)
+                return
+            }
+            
+            if (!entries || entries.length === 0) {
+                document.getElementById('journalList').innerHTML = '<p style="color: #666; margin-top: 20px;">No journal entries yet. Write your first entry above!</p>'
+                return
+            }
+            
+            const html = `
+                <h3 style="margin-top: 30px;">Recent Entries</h3>
+                ${entries.map(entry => `
+                    <div class="journal-entry">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <strong>${formatDate(entry.entry_date)}</strong>
+                            <div class="action-buttons">
+                                <button onclick="editJournalEntry('${entry.id}', '${entry.entry_date}')">✏️ Edit</button>
+                                <button class="danger" onclick="deleteJournalEntry('${entry.id}')">Delete</button>
+                            </div>
+                        </div>
+                        <p>${escapeHtml(entry.content)}</p>
+                    </div>
+                `).join('')}
+            `
+            document.getElementById('journalList').innerHTML = html
+        }
+        
+        function editJournalEntry(id, date) {
+            supabaseClient
+                .from('journal_entries')
+                .select('*')
+                .eq('id', id)
+                .single()
+                .then(({ data, error }) => {
+                    if (error) {
+                        alert('Error loading entry: ' + error.message)
+                        return
+                    }
+                    
+                    // Load into form
+                    document.getElementById('journalDate').value = data.entry_date
+                    document.getElementById('journalContent').value = data.content
+                    
+                    // Scroll to top
+                    document.getElementById('journal').scrollIntoView({ behavior: 'smooth' })
+                })
+        }
+        
+        async function deleteJournalEntry(id) {
+            if (!confirm('Delete this journal entry?')) return
+            
+            const { error } = await supabaseClient
+                .from('journal_entries')
+                .delete()
+                .eq('id', id)
+            
+            if (error) {
+                alert('Error deleting entry: ' + error.message)
+                console.error('Full error:', error)
+            } else {
+                loadJournal()
+            }
+        }
+
+        async function saveJournal() {
+            const date = document.getElementById('journalDate').value
+            const content = document.getElementById('journalContent').value.trim()
+            
+            if (!content) {
+                alert('Please write something')
+                return
+            }
+            
+            if (!date) {
+                alert('Please select a date')
+                return
+            }
+            
+            // Check if entry exists
+            const { data: existing } = await supabaseClient
+                .from('journal_entries')
+                .select('*')
+                .eq('entry_date', date)
+                .maybeSingle()
+            
+            if (existing) {
+                // Update
+                const { error } = await supabaseClient
+                    .from('journal_entries')
+                    .update({ content })
+                    .eq('id', existing.id)
+                
+                if (error) {
+                    alert('Error updating journal: ' + error.message)
+                    console.error('Full error:', error)
+                } else {
+                    alert('Journal entry updated!')
+                    loadJournal()
+                }
+            } else {
+                // Insert
+                const { error } = await supabaseClient
+                    .from('journal_entries')
+                    .insert([{
+                        entry_date: date,
+                        content,
+                        user_id: currentUser.id
+                    }])
+                
+                if (error) {
+                    alert('Error saving journal: ' + error.message)
+                    console.error('Full error:', error)
+                } else {
+                    alert('Journal entry saved!')
+                    loadJournal()
+                }
+            }
+        }
+
+        // ==========================================
+        // NAVIGATION
+        // ==========================================
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden')
+            })
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.nav-tabs button').forEach(btn => {
+                btn.classList.remove('active')
+            })
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.remove('hidden')
+            document.getElementById('btn-' + sectionId).classList.add('active')
+            
+            // Load data for section
+            if (sectionId === 'tasks') {
+                loadTasks()
+            } else if (sectionId === 'health') {
+                document.getElementById('healthDate').value = today
+                loadHealthMetrics()
+            } else if (sectionId === 'habits') {
+                loadHabits()
+            } else if (sectionId === 'journal') {
+                loadJournal()
+            }
+        }
+
+        // ==========================================
+        // UTILITY FUNCTIONS
+        // ==========================================
+        function escapeHtml(text) {
+            const div = document.createElement('div')
+            div.textContent = text
+            return div.innerHTML
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString)
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            })
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'inbox': '#e0e0e0',
+                'todo': '#fff3cd',
+                'in_progress': '#cfe2ff',
+                'waiting': '#f8d7da',
+                'completed': '#d1e7dd',
+                'cancelled': '#e0e0e0'
+            }
+            return colors[status] || '#e0e0e0'
+        }
+
+        function getPriorityColor(priority) {
+            const colors = {
+                'critical': '#f8d7da',
+                'high': '#fff3cd',
+                'medium': '#cfe2ff',
+                'low': '#d1e7dd'
+            }
+            return colors[priority] || '#e0e0e0'
+        }
+    </script>
+</body>
+</html>
