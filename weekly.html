@@ -621,7 +621,12 @@
             // Render grid
             const grid = document.getElementById('weekGrid')
             grid.innerHTML = weekDays.map(day => {
-                const dayTasks = allTasks.filter(t => t.due_date === day.date)
+                const dayTasks = allTasks
+                    .filter(t => t.due_date === day.date)
+                    .sort((a, b) => {
+                        const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
+                        return priorityOrder[a.priority] - priorityOrder[b.priority]
+                    })
                 return `
                     <div class="day-column ${day.isToday ? 'today' : ''}" 
                          data-date="${day.date}"
