@@ -1,0 +1,940 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain#2 Weekly Planner</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .auth-section { 
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .hidden { 
+            display: none; 
+        }
+        
+        button { 
+            padding: 10px 20px; 
+            margin: 5px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            background: #fff;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        button:hover { 
+            background: #f0f0f0;
+            border-color: #999;
+        }
+        
+        button.primary {
+            background: #0066cc;
+            color: white;
+            border-color: #0066cc;
+        }
+        
+        button.primary:hover {
+            background: #0052a3;
+        }
+        
+        input, select, textarea { 
+            padding: 10px; 
+            margin: 5px 0;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .header h1 {
+            margin-bottom: 10px;
+        }
+        
+        .week-nav {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .week-nav h2 {
+            flex: 1;
+            text-align: center;
+            color: #333;
+        }
+        
+        .weekly-view {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .week-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .day-column {
+            background: #f8f9fa;
+            border-radius: 6px;
+            min-height: 400px;
+            padding: 10px;
+        }
+        
+        .day-column.today {
+            background: #e3f2fd;
+        }
+        
+        .day-column.drop-target {
+            background: #c8e6c9;
+            border: 2px dashed #4caf50;
+        }
+        
+        .day-header {
+            font-weight: 600;
+            padding: 10px;
+            text-align: center;
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 10px;
+        }
+        
+        .day-header .day-name {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .day-header .day-date {
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .task-card {
+            background: white;
+            border-left: 4px solid #0066cc;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: move;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+        }
+        
+        .task-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+        
+        .task-card.dragging {
+            opacity: 0.5;
+        }
+        
+        .task-card.priority-critical {
+            border-left-color: #dc3545;
+        }
+        
+        .task-card.priority-high {
+            border-left-color: #ff9800;
+        }
+        
+        .task-card.priority-medium {
+            border-left-color: #0066cc;
+        }
+        
+        .task-card.priority-low {
+            border-left-color: #28a745;
+        }
+        
+        .task-card.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+        
+        .task-title {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        
+        .task-meta {
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .task-status {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .status-inbox { background: #e0e0e0; color: #666; }
+        .status-todo { background: #fff3cd; color: #856404; }
+        .status-in_progress { background: #cfe2ff; color: #084298; }
+        .status-completed { background: #d1e7dd; color: #0f5132; }
+        
+        .add-task-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .quick-add-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .list-view {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-bar button {
+            margin: 0;
+        }
+        
+        .filter-bar button.active {
+            background: #0066cc;
+            color: white;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .nav-tabs button.active {
+            border-bottom: 3px solid #0066cc;
+            background: #f0f7ff;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .error {
+            color: #dc3545;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            color: #28a745;
+            padding: 10px;
+            background: #d4edda;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .danger {
+            background: #dc3545;
+            color: white;
+            border-color: #dc3545;
+        }
+        
+        .danger:hover {
+            background: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Section -->
+    <div id="authSection" class="auth-section">
+        <h1>🧠 Brain#2 Weekly Planner</h1>
+        
+        <div id="loginForm">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••">
+            </div>
+            <div>
+                <button class="primary" onclick="login()">Login</button>
+                <button onclick="signup()">Sign Up</button>
+            </div>
+        </div>
+        
+        <div id="loggedIn" class="hidden">
+            <p>Logged in as: <strong><span id="userEmail"></span></strong></p>
+            <button class="danger" onclick="logout()">Logout</button>
+        </div>
+        
+        <div id="authError" class="error hidden"></div>
+        <div id="authSuccess" class="success hidden"></div>
+    </div>
+
+    <!-- Main App -->
+    <div id="mainApp" class="container hidden">
+        <!-- Navigation -->
+        <div class="header">
+            <div class="nav-tabs">
+                <button onclick="showSection('weekly')" id="btn-weekly" class="active">📅 Weekly View</button>
+                <button onclick="showSection('habits')" id="btn-habits">✅ Habits</button>
+                <button onclick="showSection('health')" id="btn-health">❤️ Health</button>
+                <button onclick="showSection('journal')" id="btn-journal">📔 Journal</button>
+            </div>
+        </div>
+
+        <!-- Weekly View Section -->
+        <div id="weekly" class="section">
+            <!-- Week Navigation -->
+            <div class="weekly-view">
+                <div class="week-nav">
+                    <button onclick="previousWeek()">← Previous Week</button>
+                    <h2 id="weekTitle"></h2>
+                    <button onclick="nextWeek()">Next Week →</button>
+                    <button onclick="goToToday()">Today</button>
+                </div>
+                
+                <!-- Week Grid -->
+                <div class="week-grid" id="weekGrid"></div>
+            </div>
+            
+            <!-- Add Task Section -->
+            <div class="add-task-section">
+                <h3>Add New Task</h3>
+                <div class="form-group">
+                    <input type="text" id="taskTitle" placeholder="What needs to be done?">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label for="taskStatus">Status</label>
+                        <select id="taskStatus">
+                            <option value="inbox">Inbox</option>
+                            <option value="todo">To Do</option>
+                            <option value="in_progress">In Progress</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="taskPriority">Priority</label>
+                        <select id="taskPriority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="taskDueDate">Due Date</label>
+                        <input type="date" id="taskDueDate">
+                    </div>
+                </div>
+                
+                <div class="quick-add-buttons">
+                    <button class="primary" onclick="addTask()">Add Task</button>
+                    <button onclick="addTaskToDay('today')">+ Today</button>
+                    <button onclick="addTaskToDay('tomorrow')">+ Tomorrow</button>
+                    <button onclick="addTaskToDay('monday')">+ Monday</button>
+                </div>
+            </div>
+            
+            <!-- List View -->
+            <div class="list-view">
+                <h3>All Tasks</h3>
+                <div class="filter-bar">
+                    <button onclick="setTaskFilter('all')" id="filter-all" class="active">All</button>
+                    <button onclick="setTaskFilter('overdue')" id="filter-overdue">Overdue</button>
+                    <button onclick="setTaskFilter('next-week')" id="filter-next-week">Next Week+</button>
+                    <button onclick="setTaskFilter('unscheduled')" id="filter-unscheduled">Unscheduled</button>
+                    <button onclick="setTaskFilter('completed')" id="filter-completed">Completed</button>
+                </div>
+                
+                <div id="tasksList"></div>
+            </div>
+        </div>
+
+        <!-- Other sections (keeping from original) -->
+        <div id="habits" class="section hidden">
+            <div style="background: white; padding: 20px; border-radius: 8px;">
+                <h2>✅ Habits</h2>
+                <p style="margin: 20px 0; color: #666;">Use the original Brain#2 admin for habits management.</p>
+            </div>
+        </div>
+
+        <div id="health" class="section hidden">
+            <div style="background: white; padding: 20px; border-radius: 8px;">
+                <h2>❤️ Health Metrics</h2>
+                <p style="margin: 20px 0; color: #666;">Use the original Brain#2 admin for health tracking.</p>
+            </div>
+        </div>
+
+        <div id="journal" class="section hidden">
+            <div style="background: white; padding: 20px; border-radius: 8px;">
+                <h2>📔 Journal</h2>
+                <p style="margin: 20px 0; color: #666;">Use the original Brain#2 admin for journaling.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
+        const SUPABASE_URL = 'https://oxvbrzxvxhplfrhpkwrb.supabase.co'
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94dmJyenh2eGhwbGZyaHBrd3JiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUwMjkwMDcsImV4cCI6MjA4MDYwNTAwN30.A90ow9V-qpn0-cnqqKUGxlEEXmh4Mfhl7wfOJIojNc8'
+        
+        const { createClient } = supabase
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+
+        let currentUser = null
+        let currentWeekStart = null
+        let allTasks = []
+        let currentTaskFilter = 'all'
+        let inboxAreaId = null
+
+        // ==========================================
+        // AUTH FUNCTIONS
+        // ==========================================
+        async function signup() {
+            const email = document.getElementById('email').value
+            const password = document.getElementById('password').value
+            
+            hideMessages()
+            
+            if (!email || !password) {
+                showError('Please enter both email and password')
+                return
+            }
+            
+            const { data, error } = await supabaseClient.auth.signUp({ email, password })
+            
+            if (error) {
+                showError(error.message)
+            } else {
+                showSuccess('Check your email to confirm your account!')
+            }
+        }
+
+        async function login() {
+            const email = document.getElementById('email').value
+            const password = document.getElementById('password').value
+            
+            hideMessages()
+            
+            if (!email || !password) {
+                showError('Please enter both email and password')
+                return
+            }
+            
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password })
+            
+            if (error) {
+                showError(error.message)
+            } else {
+                currentUser = data.user
+                showLoggedIn()
+            }
+        }
+
+        async function logout() {
+            await supabaseClient.auth.signOut()
+            currentUser = null
+            document.getElementById('authSection').classList.remove('hidden')
+            document.getElementById('mainApp').classList.add('hidden')
+            document.getElementById('loginForm').classList.remove('hidden')
+            document.getElementById('loggedIn').classList.add('hidden')
+        }
+
+        function showLoggedIn() {
+            document.getElementById('authSection').classList.add('hidden')
+            document.getElementById('mainApp').classList.remove('hidden')
+            document.getElementById('loginForm').classList.add('hidden')
+            document.getElementById('loggedIn').classList.remove('hidden')
+            document.getElementById('userEmail').textContent = currentUser.email
+            
+            goToToday()
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('authError')
+            errorDiv.textContent = message
+            errorDiv.classList.remove('hidden')
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('authSuccess')
+            successDiv.textContent = message
+            successDiv.classList.remove('hidden')
+        }
+
+        function hideMessages() {
+            document.getElementById('authError').classList.add('hidden')
+            document.getElementById('authSuccess').classList.add('hidden')
+        }
+
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
+                currentUser = session.user
+                showLoggedIn()
+            }
+        })
+
+        // ==========================================
+        // WEEK MANAGEMENT
+        // ==========================================
+        function getWeekStart(date) {
+            const d = new Date(date)
+            const day = d.getDay()
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Monday
+            return new Date(d.setDate(diff))
+        }
+
+        function formatDate(date) {
+            return date.toISOString().split('T')[0]
+        }
+
+        function goToToday() {
+            currentWeekStart = getWeekStart(new Date())
+            renderWeek()
+        }
+
+        function previousWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() - 7)
+            renderWeek()
+        }
+
+        function nextWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() + 7)
+            renderWeek()
+        }
+
+        async function renderWeek() {
+            const weekDays = []
+            const today = formatDate(new Date())
+            
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(currentWeekStart)
+                date.setDate(date.getDate() + i)
+                weekDays.push({
+                    date: formatDate(date),
+                    dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+                    dayNum: date.getDate(),
+                    isToday: formatDate(date) === today
+                })
+            }
+            
+            // Update week title
+            const endDate = new Date(currentWeekStart)
+            endDate.setDate(endDate.getDate() + 6)
+            document.getElementById('weekTitle').textContent = 
+                `${currentWeekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+            
+            // Load tasks
+            await loadAllTasks()
+            
+            // Render grid
+            const grid = document.getElementById('weekGrid')
+            grid.innerHTML = weekDays.map(day => {
+                const dayTasks = allTasks.filter(t => t.due_date === day.date)
+                return `
+                    <div class="day-column ${day.isToday ? 'today' : ''}" 
+                         data-date="${day.date}"
+                         ondrop="drop(event)" 
+                         ondragover="allowDrop(event)"
+                         ondragleave="dragLeave(event)">
+                        <div class="day-header">
+                            <div class="day-name">${day.dayName}</div>
+                            <div class="day-date">${day.dayNum}</div>
+                        </div>
+                        ${dayTasks.map(task => renderTaskCard(task)).join('')}
+                    </div>
+                `
+            }).join('')
+            
+            // Render list view
+            renderTasksList()
+        }
+
+        function renderTaskCard(task) {
+            return `
+                <div class="task-card priority-${task.priority} ${task.status === 'completed' ? 'completed' : ''}"
+                     draggable="true"
+                     ondragstart="drag(event)"
+                     data-task-id="${task.id}">
+                    <div class="task-title">${escapeHtml(task.title)}</div>
+                    <div class="task-meta">
+                        <span class="task-status status-${task.status}">${task.status}</span>
+                        <span>${task.priority}</span>
+                    </div>
+                </div>
+            `
+        }
+
+        // ==========================================
+        // DRAG AND DROP
+        // ==========================================
+        function allowDrop(event) {
+            event.preventDefault()
+            event.currentTarget.classList.add('drop-target')
+        }
+
+        function dragLeave(event) {
+            event.currentTarget.classList.remove('drop-target')
+        }
+
+        function drag(event) {
+            event.dataTransfer.setData('taskId', event.target.dataset.taskId)
+            event.target.classList.add('dragging')
+        }
+
+        async function drop(event) {
+            event.preventDefault()
+            const taskId = event.dataTransfer.getData('taskId')
+            const newDate = event.currentTarget.dataset.date
+            
+            event.currentTarget.classList.remove('drop-target')
+            
+            // Update task due date
+            const { error } = await supabaseClient
+                .from('tasks')
+                .update({ due_date: newDate })
+                .eq('id', taskId)
+            
+            if (error) {
+                alert('Error: ' + error.message)
+            } else {
+                renderWeek()
+            }
+        }
+
+        // ==========================================
+        // TASK MANAGEMENT
+        // ==========================================
+        async function getInboxAreaId() {
+            if (inboxAreaId) return inboxAreaId
+            
+            const { data: existing } = await supabaseClient
+                .from('areas')
+                .select('id')
+                .eq('name', 'Inbox')
+                .is('deleted_at', null)
+                .maybeSingle()
+            
+            if (existing) {
+                inboxAreaId = existing.id
+                return inboxAreaId
+            }
+            
+            const { data: newArea, error } = await supabaseClient
+                .from('areas')
+                .insert([{
+                    name: 'Inbox',
+                    description: 'Default area for tasks',
+                    user_id: currentUser.id
+                }])
+                .select('id')
+                .single()
+            
+            if (error) {
+                console.error('Error creating Inbox area:', error)
+                return null
+            }
+            
+            inboxAreaId = newArea.id
+            return inboxAreaId
+        }
+
+        async function loadAllTasks() {
+            const { data, error } = await supabaseClient
+                .from('tasks')
+                .select('*')
+                .is('deleted_at', null)
+                .order('created_at', { ascending: false })
+            
+            if (error) {
+                console.error('Error loading tasks:', error)
+                return
+            }
+            
+            allTasks = data || []
+        }
+
+        async function addTask() {
+            const title = document.getElementById('taskTitle').value.trim()
+            const status = document.getElementById('taskStatus').value
+            const priority = document.getElementById('taskPriority').value
+            const dueDate = document.getElementById('taskDueDate').value || null
+            
+            if (!title) {
+                alert('Please enter a task title')
+                return
+            }
+            
+            const areaId = await getInboxAreaId()
+            if (!areaId) {
+                alert('Error: Could not create Inbox area')
+                return
+            }
+            
+            const { error } = await supabaseClient
+                .from('tasks')
+                .insert([{
+                    title,
+                    status,
+                    priority,
+                    due_date: dueDate,
+                    area_id: areaId,
+                    user_id: currentUser.id
+                }])
+            
+            if (error) {
+                alert('Error: ' + error.message)
+            } else {
+                document.getElementById('taskTitle').value = ''
+                document.getElementById('taskDueDate').value = ''
+                renderWeek()
+            }
+        }
+
+        async function addTaskToDay(when) {
+            const title = document.getElementById('taskTitle').value.trim()
+            if (!title) {
+                alert('Please enter a task title')
+                return
+            }
+            
+            let dueDate
+            const today = new Date()
+            
+            if (when === 'today') {
+                dueDate = formatDate(today)
+            } else if (when === 'tomorrow') {
+                today.setDate(today.getDate() + 1)
+                dueDate = formatDate(today)
+            } else if (when === 'monday') {
+                const day = today.getDay()
+                const diff = (day === 0 ? 1 : (8 - day))
+                today.setDate(today.getDate() + diff)
+                dueDate = formatDate(today)
+            }
+            
+            document.getElementById('taskDueDate').value = dueDate
+            await addTask()
+        }
+
+        function setTaskFilter(filter) {
+            currentTaskFilter = filter
+            
+            // Update active button
+            document.querySelectorAll('.filter-bar button').forEach(btn => {
+                btn.classList.remove('active')
+            })
+            document.getElementById('filter-' + filter).classList.add('active')
+            
+            renderTasksList()
+        }
+
+        function renderTasksList() {
+            const today = formatDate(new Date())
+            const nextWeek = new Date()
+            nextWeek.setDate(nextWeek.getDate() + 7)
+            const nextWeekStr = formatDate(nextWeek)
+            
+            let filteredTasks = allTasks
+            
+            if (currentTaskFilter === 'overdue') {
+                filteredTasks = allTasks.filter(t => 
+                    t.due_date && t.due_date < today && t.status !== 'completed'
+                )
+            } else if (currentTaskFilter === 'next-week') {
+                filteredTasks = allTasks.filter(t => 
+                    t.due_date && t.due_date > nextWeekStr
+                )
+            } else if (currentTaskFilter === 'unscheduled') {
+                filteredTasks = allTasks.filter(t => !t.due_date)
+            } else if (currentTaskFilter === 'completed') {
+                filteredTasks = allTasks.filter(t => t.status === 'completed')
+            }
+            
+            if (filteredTasks.length === 0) {
+                document.getElementById('tasksList').innerHTML = '<p style="color: #666;">No tasks found.</p>'
+                return
+            }
+            
+            const html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Due Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredTasks.map(task => {
+                            const isOverdue = task.due_date && task.due_date < today && task.status !== 'completed'
+                            return `
+                                <tr>
+                                    <td>${escapeHtml(task.title)}</td>
+                                    <td><span class="task-status status-${task.status}">${task.status}</span></td>
+                                    <td>${task.priority}</td>
+                                    <td style="${isOverdue ? 'color: #dc3545; font-weight: bold;' : ''}">${task.due_date || 'Not scheduled'}</td>
+                                    <td class="action-buttons">
+                                        <button onclick="completeTask('${task.id}')">✓</button>
+                                        <button class="danger" onclick="deleteTask('${task.id}')">Delete</button>
+                                    </td>
+                                </tr>
+                            `
+                        }).join('')}
+                    </tbody>
+                </table>
+            `
+            document.getElementById('tasksList').innerHTML = html
+        }
+
+        async function completeTask(id) {
+            const { error } = await supabaseClient
+                .from('tasks')
+                .update({ 
+                    status: 'completed', 
+                    completed_at: new Date().toISOString() 
+                })
+                .eq('id', id)
+            
+            if (error) {
+                alert('Error: ' + error.message)
+            } else {
+                renderWeek()
+            }
+        }
+
+        async function deleteTask(id) {
+            if (!confirm('Delete this task?')) return
+            
+            const { error } = await supabaseClient
+                .from('tasks')
+                .update({ deleted_at: new Date().toISOString() })
+                .eq('id', id)
+            
+            if (error) {
+                alert('Error: ' + error.message)
+            } else {
+                renderWeek()
+            }
+        }
+
+        // ==========================================
+        // NAVIGATION
+        // ==========================================
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('hidden')
+            })
+            
+            document.querySelectorAll('.nav-tabs button').forEach(btn => {
+                btn.classList.remove('active')
+            })
+            
+            document.getElementById(sectionId).classList.remove('hidden')
+            document.getElementById('btn-' + sectionId).classList.add('active')
+            
+            if (sectionId === 'weekly') {
+                renderWeek()
+            }
+        }
+
+        // ==========================================
+        // UTILITIES
+        // ==========================================
+        function escapeHtml(text) {
+            const div = document.createElement('div')
+            div.textContent = text
+            return div.innerHTML
+        }
+    </script>
+</body>
+</html>
