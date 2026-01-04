@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -301,13 +301,103 @@
         .action-buttons button {
             margin: 0;
         }
+        
+        /* Habit Streak Visualization */
+        .habit-streak-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .habit-row {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .habit-row:last-child {
+            border-bottom: none;
+        }
+
+        .habit-name {
+            flex: 0 0 200px;
+            font-weight: 500;
+            padding-right: 20px;
+        }
+
+        .habit-days {
+            display: flex;
+            gap: 8px;
+            flex: 1;
+        }
+
+        .day-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            background: white;
+        }
+
+        .day-circle.completed {
+            background: #4caf50;
+            border-color: #4caf50;
+            color: white;
+        }
+
+        .day-circle.failed {
+            background: #f44336;
+            border-color: #f44336;
+            color: white;
+        }
+
+        .day-circle.pending {
+            background: #2196f3;
+            border-color: #2196f3;
+            color: white;
+        }
+
+        .day-label {
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .habit-stats {
+            flex: 0 0 150px;
+            text-align: right;
+            font-size: 13px;
+            color: #666;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .quick-actions h3 {
+            margin-bottom: 15px;
+        }
+
+        .quick-action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
-    <div style="background: #e3f2fd; padding: 10px; text-align: center; margin-bottom: 20px;">
-        <a href="weekly.html" style="color: #0066cc; text-decoration: none; font-weight: 500;">📅 Switch to Weekly Planner View</a>
-    </div>
-    
     <!-- Auth Section -->
     <div id="authSection" class="auth-section">
         <h1>🧠 Brain#2 Quick Admin</h1>
@@ -336,6 +426,47 @@
         
         <div id="authError" class="error hidden"></div>
         <div id="authSuccess" class="success hidden"></div>
+    </div>
+
+    <!-- Page Navigation Banner -->
+    <div id="pageNavBanner" class="hidden" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 12px; text-align: center; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <a href="weekly.html" style="color: white; text-decoration: none; font-weight: 600; font-size: 16px;">
+            📅 Switch to Weekly Planner → Quick task planning & scheduling
+        </a>
+    </div>
+
+    <!-- Quick Actions -->
+    <div id="quickActions" class="quick-actions hidden">
+        <h3>⚡ Quick Actions</h3>
+        <div class="quick-action-grid">
+            <button onclick="markAllHabitsToday()" class="primary">✅ Mark All Habits Done</button>
+            <button onclick="showQuickHealthLog()">❤️ Quick Health Log</button>
+            <button onclick="addTaskTomorrow()">📅 Add Task for Tomorrow</button>
+            <button onclick="showSection('journal')">📔 Quick Journal Entry</button>
+        </div>
+    </div>
+
+    <!-- Quick Health Log Modal -->
+    <div id="quickHealthModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Quick Health Log</h3>
+            <div class="form-group">
+                <label for="quickWeight">Weight (kg)</label>
+                <input type="number" id="quickWeight" step="0.1" placeholder="Optional">
+            </div>
+            <div class="form-group">
+                <label for="quickSleep">Sleep (hours)</label>
+                <input type="number" id="quickSleep" step="0.5" placeholder="Optional">
+            </div>
+            <div class="form-group">
+                <label for="quickEnergy">Energy (1-10)</label>
+                <input type="number" id="quickEnergy" min="1" max="10" placeholder="Optional">
+            </div>
+            <div style="margin-top: 20px;">
+                <button class="primary" onclick="submitQuickHealth()">Log All</button>
+                <button onclick="closeQuickHealthModal()">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <!-- Main App (hidden until logged in) -->
@@ -487,6 +618,12 @@
             <h2>✅ Habits - Today</h2>
             
             <div id="habitsList"></div>
+            
+            <!-- Habit Streak Visualization -->
+            <div id="habitStreakSection" class="hidden" style="margin-top: 30px;">
+                <h3>7-Day Habit History</h3>
+                <div id="habitStreakGrid"></div>
+            </div>
             
             <div class="form-group" style="margin-top: 30px;">
                 <h3>Add New Habit</h3>
@@ -650,6 +787,8 @@
             document.getElementById('loginForm').classList.add('hidden')
             document.getElementById('loggedIn').classList.remove('hidden')
             document.getElementById('userEmail').textContent = currentUser.email
+            document.getElementById('pageNavBanner').classList.remove('hidden')
+            document.getElementById('quickActions').classList.remove('hidden')
             
             // Default to tasks view
             showSection('tasks')
@@ -1191,6 +1330,9 @@
                 </div>
             `
             document.getElementById('habitsList').innerHTML = html
+            
+            // Load habit streaks visualization
+            loadHabitStreaks()
         }
         
         function editHabit(id) {
@@ -1555,6 +1697,269 @@
                 'low': '#d1e7dd'
             }
             return colors[priority] || '#e0e0e0'
+        }
+
+        // ==========================================
+        // HABIT STREAK VISUALIZATION
+        // ==========================================
+        async function loadHabitStreaks() {
+            const today = new Date()
+            const days = []
+            
+            // Get last 7 days
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date(today)
+                date.setDate(date.getDate() - i)
+                days.push({
+                    date: date.toISOString().split('T')[0],
+                    dayName: date.toLocaleDateString('en-US', { weekday: 'short' })[0]
+                })
+            }
+            
+            // Get all active habits
+            const { data: habits } = await supabaseClient
+                .from('habits')
+                .select('*')
+                .eq('is_active', true)
+                .is('deleted_at', null)
+                .order('created_at', { ascending: true })
+            
+            if (!habits || habits.length === 0) {
+                document.getElementById('habitStreakSection').classList.add('hidden')
+                return
+            }
+            
+            // Get logs for last 7 days
+            const startDate = days[0].date
+            const endDate = days[days.length - 1].date
+            
+            const { data: logs } = await supabaseClient
+                .from('habit_logs')
+                .select('*')
+                .gte('log_date', startDate)
+                .lte('log_date', endDate)
+            
+            // Build lookup map
+            const logsMap = {}
+            if (logs) {
+                logs.forEach(log => {
+                    const key = `${log.habit_id}-${log.log_date}`
+                    logsMap[key] = log.completed
+                })
+            }
+            
+            // Render streak grid
+            let html = '<div class="habit-streak-container">'
+            
+            habits.forEach(habit => {
+                let completedCount = 0
+                let currentStreak = 0
+                
+                html += `
+                    <div class="habit-row">
+                        <div class="habit-name">${escapeHtml(habit.name)}</div>
+                        <div class="habit-days">
+                `
+                
+                days.forEach((day, index) => {
+                    const key = `${habit.id}-${day.date}`
+                    const completed = logsMap[key]
+                    const isToday = day.date === today.toISOString().split('T')[0]
+                    
+                    let className = 'day-circle'
+                    let icon = ''
+                    
+                    if (completed === true) {
+                        className += ' completed'
+                        icon = '✓'
+                        completedCount++
+                        if (index === days.length - 1 || logsMap[`${habit.id}-${days[index + 1]?.date}`]) {
+                            currentStreak++
+                        }
+                    } else if (completed === false || (day.date < today.toISOString().split('T')[0] && completed === undefined)) {
+                        className += ' failed'
+                        icon = '✕'
+                        currentStreak = 0
+                    } else if (isToday) {
+                        className += ' pending'
+                        icon = '○'
+                    }
+                    
+                    html += `
+                        <div>
+                            <div class="${className}">${icon}</div>
+                            <div class="day-label">${day.dayName}</div>
+                        </div>
+                    `
+                })
+                
+                const completionRate = Math.round((completedCount / days.length) * 100)
+                
+                html += `
+                        </div>
+                        <div class="habit-stats">
+                            ${completionRate}% • ${currentStreak} day streak
+                        </div>
+                    </div>
+                `
+            })
+            
+            html += '</div>'
+            
+            document.getElementById('habitStreakGrid').innerHTML = html
+            document.getElementById('habitStreakSection').classList.remove('hidden')
+        }
+
+        // ==========================================
+        // QUICK ACTIONS
+        // ==========================================
+        async function markAllHabitsToday() {
+            if (!confirm('Mark all habits as completed for today?')) return
+            
+            const today = new Date().toISOString().split('T')[0]
+            
+            const { data: habits } = await supabaseClient
+                .from('habits')
+                .select('*')
+                .eq('is_active', true)
+                .is('deleted_at', null)
+            
+            if (!habits) return
+            
+            for (const habit of habits) {
+                await toggleHabit(habit.id, true)
+            }
+            
+            alert(`✅ Marked ${habits.length} habits as complete!`)
+            loadHabits()
+        }
+
+        function showQuickHealthLog() {
+            document.getElementById('quickHealthModal').classList.remove('hidden')
+        }
+
+        function closeQuickHealthModal() {
+            document.getElementById('quickHealthModal').classList.add('hidden')
+            document.getElementById('quickWeight').value = ''
+            document.getElementById('quickSleep').value = ''
+            document.getElementById('quickEnergy').value = ''
+        }
+
+        async function submitQuickHealth() {
+            const today = new Date().toISOString().split('T')[0]
+            const now = new Date().toTimeString().split(' ')[0]
+            
+            const weight = document.getElementById('quickWeight').value
+            const sleep = document.getElementById('quickSleep').value
+            const energy = document.getElementById('quickEnergy').value
+            
+            let count = 0
+            
+            if (weight) {
+                await supabaseClient.from('health_metrics').insert([{
+                    log_date: today,
+                    metric_type: 'weight',
+                    value_numeric: parseFloat(weight),
+                    unit: 'kg',
+                    user_id: currentUser.id
+                }])
+                count++
+            }
+            
+            if (sleep) {
+                await supabaseClient.from('health_metrics').insert([{
+                    log_date: today,
+                    metric_type: 'sleep',
+                    value_numeric: parseFloat(sleep),
+                    unit: 'hours',
+                    user_id: currentUser.id
+                }])
+                count++
+            }
+            
+            if (energy) {
+                await supabaseClient.from('health_metrics').insert([{
+                    log_date: today,
+                    log_time: now,
+                    metric_type: 'energy_level',
+                    value_numeric: parseInt(energy),
+                    unit: 'level',
+                    user_id: currentUser.id
+                }])
+                count++
+            }
+            
+            closeQuickHealthModal()
+            alert(`✅ Logged ${count} health metrics!`)
+            if (document.getElementById('health').classList.contains('section') && 
+                !document.getElementById('health').classList.contains('hidden')) {
+                loadHealthMetrics()
+            }
+        }
+
+        async function addTaskTomorrow() {
+            const title = prompt('Task for tomorrow:')
+            if (!title) return
+            
+            const tomorrow = new Date()
+            tomorrow.setDate(tomorrow.getDate() + 1)
+            const dueDate = tomorrow.toISOString().split('T')[0]
+            
+            const areaId = await getInboxAreaId()
+            if (!areaId) {
+                alert('Error: Could not create Inbox area')
+                return
+            }
+            
+            const { error } = await supabaseClient
+                .from('tasks')
+                .insert([{
+                    title,
+                    status: 'todo',
+                    priority: 'medium',
+                    due_date: dueDate,
+                    area_id: areaId,
+                    user_id: currentUser.id
+                }])
+            
+            if (error) {
+                alert('Error: ' + error.message)
+            } else {
+                alert(`✅ Task added for tomorrow (${dueDate})`)
+            }
+        }
+
+        async function getInboxAreaId() {
+            // Check if Inbox area exists
+            const { data: existingArea } = await supabaseClient
+                .from('areas')
+                .select('id')
+                .eq('name', 'Inbox')
+                .is('deleted_at', null)
+                .limit(1)
+                .maybeSingle()
+            
+            if (existingArea) {
+                return existingArea.id
+            }
+            
+            // Create Inbox area
+            const { data: newArea, error } = await supabaseClient
+                .from('areas')
+                .insert([{
+                    name: 'Inbox',
+                    description: 'Default area for tasks',
+                    user_id: currentUser.id
+                }])
+                .select('id')
+                .single()
+            
+            if (error) {
+                console.error('Error creating Inbox area:', error)
+                return null
+            }
+            
+            return newArea.id
         }
     </script>
 </body>
