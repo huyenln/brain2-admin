@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -324,10 +324,6 @@
     </style>
 </head>
 <body>
-    <div style="background: #fff3cd; padding: 10px; text-align: center; margin-bottom: 20px;">
-        <a href="index.html" style="color: #856404; text-decoration: none; font-weight: 500;">⚙️ Switch to Full Admin (Edit/Habits/Health/Journal)</a>
-    </div>
-    
     <!-- Auth Section -->
     <div id="authSection" class="auth-section">
         <h1>🧠 Brain#2 Weekly Planner</h1>
@@ -354,6 +350,13 @@
         
         <div id="authError" class="error hidden"></div>
         <div id="authSuccess" class="success hidden"></div>
+    </div>
+
+    <!-- Page Navigation Banner -->
+    <div id="pageNavBanner" class="hidden" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 12px; text-align: center; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <a href="index.html" style="color: white; text-decoration: none; font-weight: 600; font-size: 16px;">
+            ⚙️ Switch to Full Admin → Edit tasks, manage habits, health & journal
+        </a>
     </div>
 
     <!-- Main App -->
@@ -537,6 +540,7 @@
             document.getElementById('loginForm').classList.add('hidden')
             document.getElementById('loggedIn').classList.remove('hidden')
             document.getElementById('userEmail').textContent = currentUser.email
+            document.getElementById('pageNavBanner').classList.remove('hidden')
             
             goToToday()
         }
@@ -621,12 +625,7 @@
             // Render grid
             const grid = document.getElementById('weekGrid')
             grid.innerHTML = weekDays.map(day => {
-                const dayTasks = allTasks
-                    .filter(t => t.due_date === day.date)
-                    .sort((a, b) => {
-                        const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
-                        return priorityOrder[a.priority] - priorityOrder[b.priority]
-                    })
+                const dayTasks = allTasks.filter(t => t.due_date === day.date)
                 return `
                     <div class="day-column ${day.isToday ? 'today' : ''}" 
                          data-date="${day.date}"
@@ -874,6 +873,8 @@
                                     <td style="${isOverdue ? 'color: #dc3545; font-weight: bold;' : ''}">${task.due_date || 'Not scheduled'}</td>
                                     <td class="action-buttons">
                                         <button onclick="completeTask('${task.id}')">✓</button>
+                                        <button onclick="deferTask('${task.id}', 'tomorrow')">→ Tomorrow</button>
+                                        <button onclick="deferTask('${task.id}', 'next-week')">→ Next Week</button>
                                         <button class="danger" onclick="deleteTask('${task.id}')">Delete</button>
                                     </td>
                                 </tr>
@@ -908,6 +909,30 @@
                 .from('tasks')
                 .update({ deleted_at: new Date().toISOString() })
                 .eq('id', id)
+            
+            if (error) {
+                alert('Error: ' + error.message)
+            } else {
+                renderWeek()
+            }
+        }
+
+        async function deferTask(taskId, when) {
+            let newDate
+            const today = new Date()
+            
+            if (when === 'tomorrow') {
+                today.setDate(today.getDate() + 1)
+                newDate = formatDate(today)
+            } else if (when === 'next-week') {
+                today.setDate(today.getDate() + 7)
+                newDate = formatDate(today)
+            }
+            
+            const { error } = await supabaseClient
+                .from('tasks')
+                .update({ due_date: newDate })
+                .eq('id', taskId)
             
             if (error) {
                 alert('Error: ' + error.message)
